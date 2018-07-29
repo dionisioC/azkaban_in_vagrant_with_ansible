@@ -1,0 +1,55 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  become_method: sudo
+  vars:
+    azkaban_db: azkaban
+  pre_tasks:
+   - name: 'install python 2 abd 3'
+     raw: apt-get -y update && apt-get install -y python python3
+  tasks:
+   - name: update apt cache
+     apt: update_cache=yes
+
+   - name: Install add-apt-repostory
+     apt: name=software-properties-common state=latest
+
+   - name: Add Oracle Java Repository
+     apt_repository: repo='ppa:webupd8team/java'
+
+   - name: Accept Java 8 License
+     debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+
+   - name: Install packages
+     apt: pkg={{ item }} state=latest
+     with_items:
+       - mysql-server
+       - mysql-client
+       - python-mysqldb
+       - vim
+       - oracle-java8-installer
+       - ca-certificates
+       - oracle-java8-set-default
+
+   - name: Ensure azkaban DB is present
+     mysql_db: name={{ azkaban_db }} state=present
+
+   - name: Ensure azkaban DB user is present with correct privileges
+     mysql_user: name=azkaban password=azkaban
+                 priv={{ azkaban_db }}.*:SELECT,INSERT,UPDATE,DELETE,GRANT
+                 state=present
+
+   - name: Update Mysql config
+     copy: src=mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+           owner=root group=root
+           mode=0644
+     notify:
+      - restart mysql
+
+   - name: Start Mysql Service
+     service: name=mysql state=started enabled=true
+
+  handlers:
+   - name: restart mysql
+     service: name=mysql state=restarted
