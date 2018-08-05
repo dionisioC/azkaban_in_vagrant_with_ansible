@@ -5,8 +5,10 @@
   become_method: sudo
   vars:
     azkaban_db: azkaban
+    azkaban_version: 3.50.2
+    azkaban_source_dir: /opt/azkaban/
   pre_tasks:
-   - name: 'install python 2 abd 3'
+   - name: 'install python 2 and 3'
      raw: apt-get -y update && apt-get install -y python python3
   tasks:
    - name: update apt cache
@@ -37,7 +39,7 @@
 
    - name: Ensure azkaban DB user is present with correct privileges
      mysql_user: name=azkaban password=azkaban
-                 priv={{ azkaban_db }}.*:SELECT,INSERT,UPDATE,DELETE,GRANT
+                 priv={{ azkaban_db }}.*:SELECT,INSERT,UPDATE,DELETE,INDEX,DROP,CREATE,REFERENCES,GRANT
                  state=present
 
    - name: Update Mysql config
@@ -49,6 +51,36 @@
 
    - name: Start Mysql Service
      service: name=mysql state=started enabled=true
+
+   - name: Create main folder for Azkaban 3
+     file: 
+       path: "{{ azkaban_source_dir }}"
+       state: directory
+       mode: 0755
+       owner: vagrant
+       group: vagrant
+
+   - name: Get Azkaban 3 Source from Git
+     git:
+       repo: https://github.com/azkaban/azkaban.git
+       dest: "{{ azkaban_source_dir }}"
+       force: yes
+       version: "{{ azkaban_version }}"
+
+   - name: Change permisions for Azkaban 3 folder
+     file: 
+       dest: "{{ azkaban_source_dir }}"
+       owner: vagrant
+       group: vagrant
+       mode: 0755
+       recurse: yes
+
+   - name: Initial Build of Azkaban 3 (./gradlew build installDist)
+     shell: ./gradlew build installDist
+     args:
+       chdir: "{{ azkaban_source_dir }}"
+       executable: /bin/bash
+     become: false 
 
   handlers:
    - name: restart mysql

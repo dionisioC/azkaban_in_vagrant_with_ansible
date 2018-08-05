@@ -1,0 +1,12 @@
+[Unit]
+Description=Azkaban solo server
+[Service]
+Type=forking
+User=vagrant
+WorkingDirectory=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server
+ExecStart=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/bin/start-solo.sh
+ExecStop=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/bin/shutdown-solo.sh
+SuccessExitStatus=143
+PIDFile=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/currentpid
+[Install]
+WantedBy=multi-user.target
