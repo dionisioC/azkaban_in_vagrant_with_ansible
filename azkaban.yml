@@ -43,14 +43,15 @@
                  state=present
 
    - name: Update Mysql config
-     copy: src=mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+     copy: src=data/mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf
            owner=root group=root
            mode=0644
-     notify:
-      - restart mysql
 
-   - name: Start Mysql Service
-     service: name=mysql state=started enabled=true
+   - name: Restart service mysql, in all cases
+     service:
+       name: mysql
+       state: restarted
+       enabled: true
 
    - name: Create main folder for Azkaban 3
      file: 
@@ -82,6 +83,32 @@
        executable: /bin/bash
      become: false 
 
-  handlers:
-   - name: restart mysql
-     service: name=mysql state=restarted
+   - name: Create extlib folder for Azkaban 3
+     file:
+       path: /opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/extlib/
+       state: directory
+       mode: 0755
+       owner: vagrant
+       group: vagrant
+
+   - name: Add extlib forr mysql
+     copy: src=data/mysql-connector-java-8.0.12.jar dest=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/extlib/mysql-connector-java-8.0.12.jar
+           owner=vagrant group=vagrant
+           mode=0755
+
+   - name: Replace config to azkaban use mysql
+     copy: src=data/azkaban.properties dest=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/conf/azkaban.properties
+           owner=vagrant group=vagrant
+           mode=0755
+
+   - name: Add azkaban as a service
+     copy: src=data/azkaban-solo-server.service dest=/etc/systemd/system/azkaban-solo-server.service
+           owner=root group=root
+           mode=0755
+
+   - name: Configure azkaban service
+     systemd:
+       state: started
+       daemon_reload: yes
+       name: azkaban-solo-server
+       enabled: true
