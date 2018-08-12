@@ -91,11 +91,6 @@
        owner: vagrant
        group: vagrant
 
-   - name: Add extlib forr mysql
-     copy: src=data/mysql-connector-java-8.0.12.jar dest=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/extlib/mysql-connector-java-8.0.12.jar
-           owner=vagrant group=vagrant
-           mode=0755
-
    - name: Replace config to azkaban use mysql
      copy: src=data/azkaban.properties dest=/opt/azkaban/azkaban-solo-server/build/install/azkaban-solo-server/conf/azkaban.properties
            owner=vagrant group=vagrant
